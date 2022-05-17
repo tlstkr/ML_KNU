@@ -6,7 +6,7 @@
       {
         "label": "Compile Markdown",
         "type": "shell",
-        "command": "markdown-it sample.md -o sample.html",
+        "command": "markdown-it sample.rmd -o sample.html",
         "group": "build"
       }
     ]
