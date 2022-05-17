@@ -1,0 +1,166 @@
+<hr>
+<h2>title: &quot;Desicion tree assignment&quot;
+author: &quot;Anastasiia Tolstokorova&quot;
+date: &quot;10 03 2022&quot;
+output: html_document</h2>
+<pre><code class="language-{r">knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+</code></pre>
+<p>This assignment is based on materials from [mlcourse.ai] (https://mlcourse.ai)</p>
+<h2>Building a decision tree for predicting heart diseases</h2>
+<p>Let's read the data on heart diseases. The dataset can be downloaded from the course repo from <a href="https://www.dropbox.com/s/kr1d9vsnax5wxfo/mlbootcamp5_train.csv?dl=0">here</a>.</p>
+<p><strong>Problem</strong></p>
+<p>Predict presence or absence of cardiovascular disease (CVD) using the patient examination results.</p>
+<p><strong>Data description</strong></p>
+<p>There are 3 types of input features:</p>
+<ul>
+<li><em>Objective</em>: factual information;</li>
+<li><em>Examination</em>: results of medical examination;</li>
+<li><em>Subjective</em>: information given by the patient.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Variable Type</th>
+<th>Variable</th>
+<th>Value Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Age</td>
+<td>Objective Feature</td>
+<td>age</td>
+<td>int (days)</td>
+</tr>
+<tr>
+<td>Height</td>
+<td>Objective Feature</td>
+<td>height</td>
+<td>int (cm)</td>
+</tr>
+<tr>
+<td>Weight</td>
+<td>Objective Feature</td>
+<td>weight</td>
+<td>float (kg)</td>
+</tr>
+<tr>
+<td>Gender</td>
+<td>Objective Feature</td>
+<td>gender</td>
+<td>categorical code</td>
+</tr>
+<tr>
+<td>Systolic blood pressure</td>
+<td>Examination Feature</td>
+<td>ap_hi</td>
+<td>int</td>
+</tr>
+<tr>
+<td>Diastolic blood pressure</td>
+<td>Examination Feature</td>
+<td>ap_lo</td>
+<td>int</td>
+</tr>
+<tr>
+<td>Cholesterol</td>
+<td>Examination Feature</td>
+<td>cholesterol</td>
+<td>1: normal, 2: above normal, 3: well above normal</td>
+</tr>
+<tr>
+<td>Glucose</td>
+<td>Examination Feature</td>
+<td>gluc</td>
+<td>1: normal, 2: above normal, 3: well above normal</td>
+</tr>
+<tr>
+<td>Smoking</td>
+<td>Subjective Feature</td>
+<td>smoke</td>
+<td>binary</td>
+</tr>
+<tr>
+<td>Alcohol intake</td>
+<td>Subjective Feature</td>
+<td>alco</td>
+<td>binary</td>
+</tr>
+<tr>
+<td>Physical activity</td>
+<td>Subjective Feature</td>
+<td>active</td>
+<td>binary</td>
+</tr>
+<tr>
+<td>Presence or absence of cardiovascular disease</td>
+<td>Target Variable</td>
+<td>cardio</td>
+<td>binary</td>
+</tr>
+</tbody>
+</table>
+<p>All of the dataset values were collected at the moment of medical examination.</p>
+<h2>Task</h2>
+<p>Read the data</p>
+<pre><code class="language-{r}"># code for reading data
+dt&lt;-read.csv(&quot;./mlbootcamp5_train.csv&quot;,sep=&quot;;&quot;)
+</code></pre>
+<p>Transform the features:</p>
+<ul>
+<li>create &quot;age in years&quot; (<code>age_years</code>)dividing age by 365.25 and taking floor ($\lfloor{x}\rfloor$ is the largest integer that is less than or equal to $x$)</li>
+<li>remove &quot;age&quot; feature</li>
+<li>transfrom <code>cholesterol</code> and <code>gluc</code> to factor</li>
+</ul>
+<pre><code class="language-{r}"># your code here
+dt$age_years&lt;-floor(dt$age/365.25)
+dt&lt;-subset(dt,select=c(cardio,gender,height,weight,ap_hi,ap_lo,cholesterol,gluc,smoke,alco,active,age_years))
+
+dt$cholesterol&lt;-as.factor(dt$cholesterol)
+dt$gluc&lt;-as.factor(dt$gluc)
+dt$cardio&lt;-as.factor(dt$cardio)
+</code></pre>
+<p>Split data into train and test parts in the proportion of 7/3.
+The target feature is <code>cardio</code></p>
+<pre><code class="language-{r}"># Your code here
+library(caret)
+set.seed(1953)
+index&lt;-createDataPartition(dt$cardio,p=0.7,list=FALSE,times=1)
+training&lt;-dt[index,]
+test&lt;-dt[-index,]
+</code></pre>
+<p>Train a decision tree on the dataset <code>training</code> with <strong>max depth equal to 3</strong>. For setting this parameter use function <code>rpart::rpart.control</code>. Use default cross calidation parameters.</p>
+<pre><code class="language-{r}"># Your code here
+library(rpart)
+fit&lt;-train(cardio~gender+height+weight+ap_hi+ap_lo+cholesterol+gluc+smoke+alco+active+age_years, data=training,method=&quot;rpart&quot;,control=rpart.control(maxdepth=3))
+</code></pre>
+<p>Plot final tree with <code>rattle</code> library</p>
+<pre><code class="language-{r}"># Your code here
+library(rattle)
+fancyRpartPlot(fit$finalModel,main=&quot;Cardio feature decision tree plot&quot;,sub=&quot;Decision tree ver.1&quot;)
+</code></pre>
+<p>What is the accuracy of prediction on test data?</p>
+<pre><code class="language-{r}"># Your code here
+pred&lt;-predict(fit, test)
+acc&lt;-sum(pred==test$cardio)/nrow(test)
+print(acc)
+</code></pre>
+<p>Now set cross validation parameters: <code>method = &quot;cv&quot;</code>, <code>number = 5</code>. Tree parameters set to default.</p>
+<pre><code class="language-{r}"># Your code here
+fitControl&lt;-trainControl(method =&quot;cv&quot;,number=5)
+fit2&lt;-train(cardio~gender+height+weight+ap_hi+ap_lo+cholesterol+gluc+smoke+alco+active+age_years, data=training,method=&quot;rpart&quot;,trControl=fitControl)
+</code></pre>
+<p>Plot final tree with <code>rattle</code> library</p>
+<pre><code class="language-{r}"># Your code here
+library(rattle)
+fancyRpartPlot(fit2$finalModel,main=&quot;Cardio feature decision tree plot&quot;,sub=&quot;Decision tree ver.2&quot;)
+</code></pre>
+<p>What is the accuracy of prediction on test data?</p>
+<pre><code class="language-{r}"># Your code here
+newPred&lt;-predict(fit2,test)
+acc&lt;-sum(newPred==test$cardio)/nrow(test)
+print(acc)
+</code></pre>
+<p>Does the accuracy became better or not?
+<strong>The accuracy and the model outcome itself have not changed, changing the params have not changed the model results</strong></p>

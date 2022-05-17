@@ -1,0 +1,52 @@
+<hr>
+<h2>title: &quot;Regression solution&quot;
+author: &quot;Anastasiia Tolstokorova&quot;
+date: &quot;25 03 2022&quot;
+output: html_document</h2>
+<pre><code class="language-{r">knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+</code></pre>
+<p>This is assignment is inspired by practices of [Ryan Miller] (https://remiller1450.github.io/).</p>
+<h2>Using regression for predicting binary outcome.</h2>
+<p>The [Donner Party] (https://en.wikipedia.org/wiki/Donner_Party) dataset documents the fate of members of the Donner Party, a group of 45 pioneers whose migration to California was delayed by a series of mishaps which resulted in the group being stranded in the Sierra Nevada mountains.</p>
+<p><strong>Problem</strong>
+Predict survival status members of the Donner Party. The target variable is <code>Survived</code>.</p>
+<h2>Task</h2>
+<p>Read the data. Pay attention that data has NA values. It's better to convert target variable to factor.</p>
+<pre><code class="language-{r}"># code for reading data
+df&lt;-read.csv(&quot;./donner_party.csv&quot;)
+df&lt;-na.omit(df)
+df$Survived&lt;-as.factor(df$Survived)
+</code></pre>
+<p>For prediction we will use only variables <code>Sex</code> and <code>Age</code>.</p>
+<p>For predicting binary outcome we will use <strong>Generalized Linear Model</strong> (<code>method = &quot;glm&quot;</code>) and <strong>caret package</strong>.</p>
+<pre><code class="language-{r}"># code for regression
+library(caret)
+fit&lt;-train(
+  Survived~Sex+Age,
+  data=df,
+  method='glm',
+  family=binomial
+)
+pred&lt;-predict(fit,newdata=df)
+</code></pre>
+<p>What is your in-sample accuracy? Build a confusion matrix</p>
+<pre><code class="language-{r}"># code for confusion matrix
+confusionMatrix(pred, df$Survived)
+</code></pre>
+<p>Use a cross-validation with <code>method = &quot;repeatedcv&quot;</code>, <code>number = 5</code>, <code>repeats = 10</code>. Does cross-validation improve the accuracy?</p>
+<pre><code class="language-{r}"># code for cross-validation
+fit2&lt;-train(
+  Survived~Sex+Age,
+  data=df,
+  method='glm',
+  family=binomial,
+  trControl=trainControl(method='repeatedcv',number=5,repeats=10)
+)
+
+pred2&lt;-predict(
+  fit2,
+  newdata=df
+)
+confusionMatrix(pred2,df$Survived)
+</code></pre>
+<h4>Cross-validation does not improve the accuracy</h4>
